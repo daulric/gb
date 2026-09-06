@@ -248,7 +248,10 @@ describe('PermissionService', () => {
         school: { data: { owner_id: 'owner-user' }, error: null },
         school_management: (call) =>
           call.op === 'select'
-            ? { data: { id: 'm1', user_id: 'u2', school_id: 's1' }, error: null }
+            ? {
+                data: { id: 'm1', user_id: 'u2', school_id: 's1' },
+                error: null,
+              }
             : { data: null, error: null },
       },
     });
@@ -291,8 +294,14 @@ describe('PermissionService', () => {
         school: { data: { owner_id: 'owner-user' }, error: null },
         school_management: (call) =>
           call.op === 'select'
-            ? { data: { id: 'm1', user_id: 'u2', school_id: 's1' }, error: null }
-            : { data: null, error: { code: '23502', message: 'not-null violation' } },
+            ? {
+                data: { id: 'm1', user_id: 'u2', school_id: 's1' },
+                error: null,
+              }
+            : {
+                data: null,
+                error: { code: '23502', message: 'not-null violation' },
+              },
       },
     });
     const { cache } = makeCache();

@@ -29,28 +29,32 @@ export class AcademicYearController {
   @RequirePermission('academic-year', 'create')
   @Post()
   async create(@Req() req: any, @Body() dto: CreateAcademicYearDto) {
-    const raw = await this.academicYearService.create(req.user.id, dto);
+    const user_id: string = req.user.id;
+    const raw = await this.academicYearService.create(user_id, dto);
     return this.versioning.resolve(req, 'academicYear.created')(raw);
   }
 
   @RequirePermission('academic-year', 'read')
   @Get()
   async findAll(@Req() req: any) {
-    const raw = await this.academicYearService.findAll(req.user.id);
+    const user_id: string = req.user.id;
+    const raw = await this.academicYearService.findAll(user_id);
     return this.versioning.resolve(req, 'academicYear.list')(raw);
   }
 
   @RequirePermission('academic-year', 'read')
   @Get('active')
   async findActive(@Req() req: any) {
-    const raw = await this.academicYearService.findActive(req.user.id);
+    const user_id: string = req.user.id;
+    const raw = await this.academicYearService.findActive(user_id);
     return this.versioning.resolve(req, 'academicYear.detail')(raw);
   }
 
   @RequirePermission('academic-year', 'read')
   @Get(':id')
   async findOne(@Req() req: any, @Param('id') id: string) {
-    const raw = await this.academicYearService.findOne(req.user.id, id);
+    const user_id: string = req.user.id;
+    const raw = await this.academicYearService.findOne(user_id, id);
     return this.versioning.resolve(req, 'academicYear.detail')(raw);
   }
 
@@ -61,21 +65,24 @@ export class AcademicYearController {
     @Param('id') id: string,
     @Body() dto: UpdateAcademicYearDto,
   ) {
-    const raw = await this.academicYearService.update(req.user.id, id, dto);
+    const user_id: string = req.user.id;
+    const raw = await this.academicYearService.update(user_id, id, dto);
     return this.versioning.resolve(req, 'academicYear.updated')(raw);
   }
 
   @RequirePermission('academic-year', 'update')
   @Patch(':id/activate')
   async setActive(@Req() req: any, @Param('id') id: string) {
-    const raw = await this.academicYearService.setActive(req.user.id, id);
+    const user_id: string = req.user.id;
+    const raw = await this.academicYearService.setActive(user_id, id);
     return this.versioning.resolve(req, 'academicYear.updated')(raw);
   }
 
   @RequirePermission('academic-year', 'update')
   @Patch(':id/deactivate')
   async deactivate(@Req() req: any, @Param('id') id: string) {
-    const raw = await this.academicYearService.deactivate(req.user.id, id);
+    const user_id: string = req.user.id;
+    const raw = await this.academicYearService.deactivate(user_id, id);
     return this.versioning.resolve(req, 'academicYear.updated')(raw);
   }
 }
