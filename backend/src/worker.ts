@@ -26,7 +26,7 @@ async function ensureApp(env: Record<string, string>) {
   // Register cookie plugin so the Supabase SSR adapter can read/write
   // session cookies. Without this, every cookie write silently drops
   // and sessions break on this entrypoint.
-  await app.register(cookie as any);
+  await app.register(cookie);
 
   await app.register(multipart, {
     limits: { fileSize: 10 * 1024 * 1024 },

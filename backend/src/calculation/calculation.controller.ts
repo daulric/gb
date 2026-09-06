@@ -76,7 +76,8 @@ export class CalculationController {
     @Query('termId') termId: string,
     @Query('studentGroupId') studentGroupId: string,
   ) {
-    await this.verifyClassTeacher(req.user.id, studentGroupId);
+    const userId: string = req.user.id;
+    await this.verifyClassTeacher(userId, studentGroupId);
     const raw = await this.calculationService.calculateStudentTermResult(
       studentId,
       termId,
@@ -93,7 +94,8 @@ export class CalculationController {
     @Query('academicYearId') academicYearId: string,
     @Query('studentGroupId') studentGroupId: string,
   ) {
-    await this.verifyClassTeacher(req.user.id, studentGroupId);
+    const userId: string = req.user.id;
+    await this.verifyClassTeacher(userId, studentGroupId);
     const raw = await this.calculationService.calculateStudentYearResult(
       studentId,
       academicYearId,
@@ -109,7 +111,8 @@ export class CalculationController {
     @Query('termId') termId: string,
     @Query('studentGroupId') studentGroupId: string,
   ) {
-    await this.verifyClassTeacher(req.user.id, studentGroupId);
+    const userId: string = req.user.id;
+    await this.verifyClassTeacher(userId, studentGroupId);
     const raw = await this.calculationService.calculateClassTermResults(
       termId,
       studentGroupId,
@@ -124,7 +127,8 @@ export class CalculationController {
     @Query('academicYearId') academicYearId: string,
     @Query('studentGroupId') studentGroupId: string,
   ) {
-    await this.verifyClassTeacher(req.user.id, studentGroupId);
+    const userId: string = req.user.id;
+    await this.verifyClassTeacher(userId, studentGroupId);
     const raw = await this.calculationService.calculateClassYearResults(
       academicYearId,
       studentGroupId,
@@ -139,7 +143,8 @@ export class CalculationController {
     @Query('termId') termId: string,
     @Query('studentGroupId') studentGroupId: string,
   ) {
-    await this.verifyClassTeacher(req.user.id, studentGroupId);
+    const userId: string = req.user.id;
+    await this.verifyClassTeacher(userId, studentGroupId);
 
     const results = await this.calculationService.calculateClassTermResults(
       termId,

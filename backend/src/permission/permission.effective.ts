@@ -52,7 +52,7 @@ export async function computeEffectivePermissions(
     };
   }
 
-  const keys = defaultsForRole(membership.role);
+  const keys = defaultsForRole(membership.role as string);
 
   // Union any custom roles assigned to this membership.
   const { data: assignedRoles } = await supabase

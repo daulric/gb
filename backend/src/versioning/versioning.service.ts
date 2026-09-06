@@ -8,7 +8,8 @@ export class VersioningService {
   private readonly registry = new Map<string, Map<number, TransformerFn>>();
 
   register(namespace: string, versions: Record<number, TransformerFn>): void {
-    const map = this.registry.get(namespace) ?? new Map();
+    const map: Map<number, TransformerFn> =
+      this.registry.get(namespace) ?? new Map();
 
     for (const [version, fn] of Object.entries(versions)) {
       map.set(Number(version), fn);

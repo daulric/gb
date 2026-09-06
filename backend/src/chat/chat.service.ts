@@ -93,7 +93,10 @@ export class ChatService {
       .select('conversation_id, last_read_at')
       .eq('user_id', userId);
 
-    const ids = (memberships ?? []).map((m: any) => m.conversation_id);
+    const ids: string[] = (memberships ?? []).map(
+      (m: { conversation_id: string }) => m.conversation_id,
+    );
+
     if (ids.length === 0) return [];
 
     const { data: conversations } = await client
@@ -452,7 +455,7 @@ export class ChatService {
 
     const conversation = await this.assertMember(
       userId,
-      message.conversation_id,
+      message.conversation_id as string,
     );
     // The recipient acts on it, never the sender who created the action.
     if (message.sender_id === userId) {
@@ -739,11 +742,10 @@ export class ChatService {
       .eq('user_id', userId)
       .maybeSingle();
 
-    const unreadCount = await this.unreadFor(
-      conv.id,
-      userId,
-      membership?.last_read_at ?? null,
-    );
+    const last_read_at: string | null = membership?.last_read_at ?? null;
+
+    const unreadCount = await this.unreadFor(conv.id, userId, last_read_at);
+
     return this.presentConversation(
       conv,
       participantsMap.get(conv.id) ?? [],

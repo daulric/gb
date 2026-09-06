@@ -40,7 +40,7 @@ export class EnrollmentController {
   ) {
     const raw = await this.enrollmentService.getEnrolledStudents(
       classId,
-      req.user.id,
+      req.user.id as string,
       subjectId,
     );
     return this.versioning.resolve(req, 'enrollment.students')(raw);

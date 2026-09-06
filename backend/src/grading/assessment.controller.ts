@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthGuard } from '@/auth/auth.guard';
 import { PermissionGuard } from '@/permission/permission.guard';
 import { RequirePermission } from '@/permission/require-permission.decorator';
@@ -37,7 +37,7 @@ export class AssessmentController {
   async findByTermAndSubject(
     @Query('termId') termId: string,
     @Query('subjectId') subjectId: string,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.assessmentService.findByTermAndSubject(
@@ -53,7 +53,7 @@ export class AssessmentController {
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.assessmentService.findOne(id, req, reply);
@@ -64,11 +64,11 @@ export class AssessmentController {
   @Post()
   async create(
     @Body() dto: CreateAssessmentDto,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.assessmentService.create(
-      req.user.id,
+      (req as FastifyRequest & { user: { id: string } }).user.id,
       dto,
       req,
       reply,
@@ -81,7 +81,7 @@ export class AssessmentController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateAssessmentDto,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.assessmentService.update(id, dto, req, reply);
@@ -93,7 +93,7 @@ export class AssessmentController {
   async exclude(
     @Param('id') id: string,
     @Body() dto: ExcludeDto,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.assessmentService.exclude(id, dto, req, reply);
@@ -104,7 +104,7 @@ export class AssessmentController {
   @Delete(':id')
   async delete(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.assessmentService.delete(id, req, reply);

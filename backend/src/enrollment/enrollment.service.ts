@@ -10,8 +10,38 @@ import { EnrollStudentDto } from './dto/enroll-student.dto';
 import { BulkEnrollDto } from './dto/bulk-enroll.dto';
 import { AssignSubjectsDto } from './dto/assign-subjects.dto';
 import { BulkAssignSubjectsDto } from './dto/bulk-assign-subjects.dto';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const ENROLLMENT_TTL = 60 * 60 * 24 * 30;
+
+// Type definitions for internal entities
+interface Student {
+  id: string;
+  first_name: string;
+  last_name: string;
+  gender: string;
+  date_of_birth: string;
+  is_active: boolean;
+}
+
+interface EnrollmentRecord {
+  id: string;
+  enrolled_at: string;
+  student: Student;
+}
+
+interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  is_graded?: boolean;
+  sort_order?: number;
+}
+
+interface StudentSubjectProfile {
+  student_id: string;
+  subject_id: string;
+}
 
 @Injectable()
 export class EnrollmentService {
@@ -92,9 +122,9 @@ export class EnrollmentService {
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
-    const supabase = this.supabaseService.getServiceClient();
+    const supabase: SupabaseClient = this.supabaseService.getServiceClient();
 
-    const { data: allEnrolled, error } = await supabase
+    const { data: allEnrolledData, error } = await supabase
       .schema('student')
       .from('student_group_enrollment')
       .select(
@@ -119,10 +149,12 @@ export class EnrollmentService {
       throw new BadRequestException('Failed to get enrolled students');
     }
 
-    if (!allEnrolled?.length) return [];
+    const allEnrolled =
+      (allEnrolledData as unknown as EnrollmentRecord[]) ?? [];
+    if (!allEnrolled.length) return [];
 
     const academicYearId = await this.getAcademicYearId(classId);
-    const allStudentIds = allEnrolled.map((e: any) => e.student.id);
+    const allStudentIds = allEnrolled.map((e) => e.student.id);
 
     let filtered = allEnrolled;
 
@@ -135,8 +167,14 @@ export class EnrollmentService {
         .eq('subject_id', subjectId)
         .eq('academic_year_id', academicYearId);
 
-      const assignedIds = new Set((profiles ?? []).map((p) => p.student_id));
-      filtered = filtered.filter((e: any) => assignedIds.has(e.student.id));
+      if (!profiles) {
+        throw Error(
+          `Failed to get student subject profiles for subject ${subjectId}`,
+        );
+      }
+
+      const assignedIds = new Set<string>(profiles.map((p) => p.student_id));
+      filtered = filtered.filter((e) => assignedIds.has(e.student.id));
     }
 
     if (!userId) {
@@ -153,7 +191,7 @@ export class EnrollmentService {
       .from('user_profile')
       .select('role')
       .eq('id', userId)
-      .single();
+      .single<{ role: string }>();
 
     if (profile?.role === 'admin') {
       const result = await this.attachSubjects(
@@ -171,7 +209,7 @@ export class EnrollmentService {
       .select('is_class_teacher')
       .eq('user_profile_id', userId)
       .eq('student_group_id', classId)
-      .single();
+      .single<{ is_class_teacher: boolean }>();
 
     if (groupAssignment?.is_class_teacher) {
       const result = await this.attachSubjects(
@@ -190,10 +228,16 @@ export class EnrollmentService {
       .eq('user_profile_id', userId)
       .eq('student_group_id', classId);
 
-    if (!subjectAssignments?.length) return [];
+    const typedSubjectAssignments: { subject_id: string }[] =
+      subjectAssignments ?? [];
 
-    const teacherSubjectIds = subjectAssignments.map((sa) => sa.subject_id);
-    const studentIds = filtered.map((e: any) => e.student.id);
+    if (!typedSubjectAssignments.length) return [];
+
+    const teacherSubjectIds = typedSubjectAssignments
+      .map((sa: { subject_id: string }) => sa.subject_id)
+      .filter(Boolean);
+
+    const studentIds = filtered.map((e) => e.student.id);
 
     const { data: profiles } = await supabase
       .schema('student')
@@ -203,11 +247,12 @@ export class EnrollmentService {
       .in('subject_id', teacherSubjectIds)
       .eq('academic_year_id', academicYearId);
 
+    const typedProfiles: StudentSubjectProfile[] = profiles ?? [];
     const studentIdsWithSubject = new Set(
-      (profiles ?? []).map((p) => p.student_id),
+      typedProfiles.map((p) => p.student_id),
     );
 
-    const filteredBySubject = filtered.filter((e: any) =>
+    const filteredBySubject = filtered.filter((e) =>
       studentIdsWithSubject.has(e.student.id),
     );
     const result = await this.attachSubjects(
@@ -220,15 +265,18 @@ export class EnrollmentService {
     return result;
   }
 
-  private async attachSubjects(
-    supabase: any,
-    enrolled: any[],
+  private async attachSubjects<
+    TEnrolled extends { student: { id: string } },
+    TSubject extends Subject = Subject,
+  >(
+    supabase: SupabaseClient,
+    enrolled: TEnrolled[],
     academicYearId: string,
     limitToSubjectIds?: string[],
-  ) {
-    if (!enrolled.length) return enrolled;
+  ): Promise<(TEnrolled & { subjects: TSubject[] })[]> {
+    if (!enrolled.length) return [];
 
-    const studentIds = enrolled.map((e: any) => e.student.id);
+    const studentIds = enrolled.map((e) => e.student.id);
 
     let query = supabase
       .schema('student')
@@ -242,14 +290,13 @@ export class EnrollmentService {
     }
 
     const { data: profiles } = await query;
+    const safeProfiles: StudentSubjectProfile[] = profiles ?? [];
 
     const subjectIds = [
-      ...new Set((profiles ?? []).map((p: any) => p.subject_id)),
+      ...new Set(safeProfiles.map((p: { subject_id: string }) => p.subject_id)),
     ];
-    let subjectMap = new Map<
-      string,
-      { id: string; name: string; code: string }
-    >();
+
+    let subjectMap = new Map<string, TSubject>();
 
     if (subjectIds.length) {
       const { data: subjects } = await supabase
@@ -259,22 +306,23 @@ export class EnrollmentService {
         .order('sort_order')
         .order('name');
 
-      subjectMap = new Map((subjects ?? []).map((s: any) => [s.id, s]));
+      subjectMap = new Map(
+        ((subjects as TSubject[] | null) ?? []).map((s) => [s.id, s]),
+      );
     }
 
-    const subjectsByStudent = new Map<
-      string,
-      { id: string; name: string; code: string }[]
-    >();
-    for (const p of profiles ?? []) {
+    const subjectsByStudent = new Map<string, TSubject[]>();
+
+    for (const p of safeProfiles) {
       const subj = subjectMap.get(p.subject_id);
       if (!subj) continue;
+
       const list = subjectsByStudent.get(p.student_id) ?? [];
       list.push(subj);
       subjectsByStudent.set(p.student_id, list);
     }
 
-    return enrolled.map((e: any) => ({
+    return enrolled.map((e) => ({
       ...e,
       subjects: subjectsByStudent.get(e.student.id) ?? [],
     }));
@@ -299,7 +347,7 @@ export class EnrollmentService {
       .from('student_group')
       .select('academic_year_id')
       .eq('id', classId)
-      .single();
+      .single<{ academic_year_id: string }>();
 
     if (group?.academic_year_id) {
       await supabase
@@ -322,7 +370,7 @@ export class EnrollmentService {
       .from('student_group')
       .select('academic_year_id')
       .eq('id', classId)
-      .single();
+      .single<{ academic_year_id: string }>();
 
     if (error || !data?.academic_year_id) {
       throw new BadRequestException(
@@ -333,9 +381,6 @@ export class EnrollmentService {
     return data.academic_year_id;
   }
 
-  // Reject enrollments that try to mix schools. The ClassTeacherGuard
-  // already restricts who can call this endpoint, but it doesn't stop a
-  // class teacher in school A from enrolling a studentId from school B.
   private async assertSameSchool(classId: string, studentIds: string[]) {
     if (studentIds.length === 0) return;
     const supabase = this.supabaseService.getServiceClient();
@@ -344,11 +389,9 @@ export class EnrollmentService {
       .from('student_group')
       .select('academic_year:academic_year_id(school_id)')
       .eq('id', classId)
-      .maybeSingle();
+      .maybeSingle<{ academic_year: { school_id: string } | null }>();
 
-    const classSchoolId = (
-      group?.academic_year as { school_id?: string } | null
-    )?.school_id;
+    const classSchoolId = group?.academic_year?.school_id;
 
     if (groupErr || !classSchoolId) {
       throw new BadRequestException(
@@ -356,13 +399,15 @@ export class EnrollmentService {
       );
     }
 
-    const { data: students, error: studErr } = await supabase
+    const { data: studentsData, error: studErr } = await supabase
       .schema('student')
       .from('student')
       .select('id, school_id')
       .in('id', studentIds);
 
-    if (studErr || !students) {
+    const students: { id: string; school_id: string }[] = studentsData ?? [];
+
+    if (studErr || !students.length) {
       throw new BadRequestException('Could not verify students');
     }
 
@@ -462,7 +507,7 @@ export class EnrollmentService {
     const academicYearId = await this.getAcademicYearId(classId);
     const supabase = this.supabaseService.getServiceClient();
 
-    const { data: profiles, error: profileError } = await supabase
+    const { data: profilesData, error: profileError } = await supabase
       .schema('student')
       .from('student_subject_profile')
       .select('id, subject_id')
@@ -476,12 +521,13 @@ export class EnrollmentService {
       throw new BadRequestException('Failed to get student subjects');
     }
 
-    if (!profiles?.length) return [];
+    const profiles: { id: string; subject_id: string }[] = profilesData ?? [];
+    if (!profiles.length) return [];
 
     const subjectIds = profiles.map((p) => p.subject_id).filter(Boolean);
     if (!subjectIds.length) return [];
 
-    const { data: subjects, error: subjectError } = await supabase
+    const { data: subjectsData, error: subjectError } = await supabase
       .from('subject')
       .select('id, name, code, is_graded, sort_order')
       .in('id', subjectIds)
@@ -493,7 +539,8 @@ export class EnrollmentService {
       throw new BadRequestException('Failed to get student subjects');
     }
 
-    const subjectMap = new Map((subjects ?? []).map((s) => [s.id, s]));
+    const subjects = (subjectsData as Subject[] | null) ?? [];
+    const subjectMap = new Map(subjects.map((s) => [s.id, s]));
 
     const result = profiles.map((p) => ({
       id: p.id,

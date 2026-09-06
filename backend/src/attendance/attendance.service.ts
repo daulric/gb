@@ -98,7 +98,7 @@ export class AttendanceService {
       .map((e: any) => e.student)
       .filter((s: any) => s != null)
       .map((s: any) => {
-        const r = recordByStudent.get(s.id);
+        const r = recordByStudent.get(s.id as string);
         return {
           studentId: s.id,
           firstName: s.first_name,
@@ -263,8 +263,8 @@ export class AttendanceService {
     }
 
     await this.invalidateClassDate(
-      existing.student_group_id,
-      existing.attendance_date,
+      existing.student_group_id as string,
+      existing.attendance_date as string,
     );
     return { message: 'Attendance record deleted' };
   }

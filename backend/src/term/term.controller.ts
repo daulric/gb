@@ -31,21 +31,24 @@ export class TermController {
   @RequirePermission('term', 'read')
   @Get()
   async findByYear(@Req() req: any, @Query('yearId') yearId: string) {
-    const raw = await this.termService.findByYear(req.user.id, yearId);
+    const userId: string = req.user.id;
+    const raw = await this.termService.findByYear(userId, yearId);
     return this.versioning.resolve(req, 'term.list')(raw);
   }
 
   @RequirePermission('term', 'read')
   @Get(':id')
   async findOne(@Req() req: any, @Param('id') id: string) {
-    const raw = await this.termService.findOne(req.user.id, id);
+    const userId: string = req.user.id;
+    const raw = await this.termService.findOne(userId, id);
     return this.versioning.resolve(req, 'term.detail')(raw);
   }
 
   @RequirePermission('term', 'create')
   @Post()
   async create(@Req() req: any, @Body() dto: CreateTermDto) {
-    const raw = await this.termService.create(req.user.id, dto);
+    const userId: string = req.user.id;
+    const raw = await this.termService.create(userId, dto);
     return this.versioning.resolve(req, 'term.created')(raw);
   }
 
@@ -56,14 +59,16 @@ export class TermController {
     @Param('id') id: string,
     @Body() dto: UpdateTermDto,
   ) {
-    const raw = await this.termService.update(req.user.id, id, dto);
+    const userId: string = req.user.id;
+    const raw = await this.termService.update(userId, id, dto);
     return this.versioning.resolve(req, 'term.updated')(raw);
   }
 
   @RequirePermission('term', 'delete')
   @Delete(':id')
   async delete(@Req() req: any, @Param('id') id: string) {
-    const raw = await this.termService.delete(req.user.id, id);
+    const userId: string = req.user.id;
+    const raw = await this.termService.delete(userId, id);
     return this.versioning.resolve(req, 'term.deleted')(raw);
   }
 }

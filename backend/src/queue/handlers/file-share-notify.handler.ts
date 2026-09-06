@@ -44,7 +44,7 @@ export class FileShareNotifyHandler {
       this.logger.error(
         `Failed to invoke file-share-notify for ${share.id}: ${error.message}`,
       );
-      throw new Error(error.message);
+      throw new Error(error.message as string);
     }
   }
 }

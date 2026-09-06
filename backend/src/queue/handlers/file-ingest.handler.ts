@@ -40,7 +40,7 @@ export class FileIngestHandler {
       this.logger.error(
         `Failed to invoke file-ingest for ${data.storagePath}: ${functionError.message}`,
       );
-      throw new Error(functionError.message);
+      throw new Error(functionError.message as string);
     }
     return;
   }

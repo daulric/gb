@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthGuard } from '@/auth/auth.guard';
 import { PermissionGuard } from '@/permission/permission.guard';
 import { RequirePermission } from '@/permission/require-permission.decorator';
@@ -36,7 +36,7 @@ export class GradeController {
   @Get()
   async findByAssessment(
     @Query('assessmentId') assessmentId: string,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.gradeService.findByAssessment(
@@ -52,7 +52,7 @@ export class GradeController {
   async findByTermAndSubject(
     @Query('termId') termId: string,
     @Query('subjectId') subjectId: string,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.gradeService.findByTermAndSubject(
@@ -68,10 +68,15 @@ export class GradeController {
   @Post()
   async create(
     @Body() dto: CreateGradeDto,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
-    const raw = await this.gradeService.create(req.user.id, dto, req, reply);
+    const raw = await this.gradeService.create(
+      (req as FastifyRequest & { user: { id: string } }).user.id,
+      dto,
+      req,
+      reply,
+    );
     return this.versioning.resolve(req, 'grade.created')(raw);
   }
 
@@ -79,11 +84,11 @@ export class GradeController {
   @Post('bulk')
   async bulkCreate(
     @Body() dto: BulkGradeDto,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.gradeService.bulkCreate(
-      req.user.id,
+      (req as FastifyRequest & { user: { id: string } }).user.id,
       dto,
       req,
       reply,
@@ -96,12 +101,12 @@ export class GradeController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateGradeDto,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.gradeService.update(
       id,
-      req.user.id,
+      (req as FastifyRequest & { user: { id: string } }).user.id,
       dto,
       req,
       reply,
@@ -114,12 +119,12 @@ export class GradeController {
   async exclude(
     @Param('id') id: string,
     @Body() dto: ExcludeDto,
-    @Req() req: any,
+    @Req() req: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const raw = await this.gradeService.exclude(
       id,
-      req.user.id,
+      (req as FastifyRequest & { user: { id: string } }).user.id,
       dto,
       req,
       reply,

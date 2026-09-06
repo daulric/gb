@@ -138,7 +138,7 @@ export class PermissionService {
     const role = await this.requireRoleInSchool(adminUserId, roleId);
 
     if (role.is_system) {
-      return [...defaultsForRole(role.name)];
+      return [...defaultsForRole(role.name as string)];
     }
 
     const { data, error } = await supabase
@@ -363,7 +363,7 @@ export class PermissionService {
       .eq('id', userId)
       .maybeSingle();
 
-    const schoolId = profile?.school_id ?? null;
+    const schoolId: string = profile?.school_id ?? null;
     if (!schoolId) {
       return { schoolId: null, role: null, isAdmin: false, permissions: [] };
     }

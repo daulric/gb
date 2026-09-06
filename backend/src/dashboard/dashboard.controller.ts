@@ -12,6 +12,6 @@ export class DashboardController {
 
   @Get('summary')
   summary(@Req() req: any) {
-    return this.dashboard.summary(req.user.id);
+    return this.dashboard.summary(req.user.id as string);
   }
 }

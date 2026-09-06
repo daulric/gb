@@ -335,9 +335,11 @@ export class ClassService {
     const subjectsByTeacher = new Map<string, any[]>();
     for (const sa of subjectAssignments ?? []) {
       const tid = sa.user_profile_id;
-      if (!subjectsByTeacher.has(tid)) subjectsByTeacher.set(tid, []);
-      const subject = subjectMap.get(sa.subject_id);
-      if (subject) subjectsByTeacher.get(tid)!.push(subject);
+      if (!subjectsByTeacher.has(tid as string))
+        subjectsByTeacher.set(tid as string, []);
+
+      const subject = subjectMap.get(sa.subject_id as string);
+      if (subject) subjectsByTeacher.get(tid as string)!.push(subject);
     }
 
     const result = assignments
@@ -349,7 +351,7 @@ export class ClassService {
           firstName: profile?.first_name ?? null,
           lastName: profile?.last_name ?? null,
           isClassTeacher: row.is_class_teacher,
-          subjects: subjectsByTeacher.get(row.user_profile_id) ?? [],
+          subjects: subjectsByTeacher.get(row.user_profile_id as string) ?? [],
         };
       });
 

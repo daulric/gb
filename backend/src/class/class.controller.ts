@@ -37,7 +37,7 @@ export class ClassController {
     @Query('academicYearId') academicYearId?: string,
   ) {
     const raw = await this.classService.getMyClasses(
-      req.user.id,
+      req.user.id as string,
       academicYearId,
     );
     return this.versioning.resolve(req, 'class.list')(raw);
@@ -46,7 +46,7 @@ export class ClassController {
   @RequirePermission('class', 'create')
   @Post()
   async createClass(@Req() req: any, @Body() dto: CreateClassDto) {
-    const raw = await this.classService.createClass(req.user.id, dto);
+    const raw = await this.classService.createClass(req.user.id as string, dto);
     return this.versioning.resolve(req, 'class.created')(raw);
   }
 
@@ -80,17 +80,16 @@ export class ClassController {
   @RequirePermission('class', 'read')
   @Get('school-teachers')
   async getSchoolTeachers(@Req() req: any) {
-    const raw = await this.classService.getSchoolTeachers(req.user.id);
+    const userId: string = req.user.id;
+    const raw = await this.classService.getSchoolTeachers(userId);
     return this.versioning.resolve(req, 'class.teachers')(raw);
   }
 
   @RequirePermission('class', 'read')
   @Get(':classId/my-subjects')
   async getMySubjects(@Req() req: any, @Param('classId') classId: string) {
-    const raw = await this.classService.getMySubjectsForClass(
-      req.user.id,
-      classId,
-    );
+    const userId: string = req.user.id;
+    const raw = await this.classService.getMySubjectsForClass(userId, classId);
     return this.versioning.resolve(req, 'class.subjects')(raw);
   }
 
@@ -109,7 +108,8 @@ export class ClassController {
     @Param('classId') classId: string,
     @Body() dto: AddTeacherDto,
   ) {
-    const raw = await this.classService.addTeacher(req.user.id, classId, dto);
+    const userId: string = req.user.id;
+    const raw = await this.classService.addTeacher(userId, classId, dto);
     return this.versioning.resolve(req, 'class.teacherAdded')(raw);
   }
 

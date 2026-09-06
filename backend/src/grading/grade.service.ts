@@ -147,7 +147,7 @@ export class GradeService {
       .select('max_score')
       .eq('id', assessmentId)
       .maybeSingle();
-    const maxScore = assessment?.max_score;
+    const maxScore: number = assessment?.max_score;
 
     const studentIds = [...new Set(grades.map((g) => g.student_id))];
     const serviceClient = this.supabaseService.getServiceClient();
@@ -166,11 +166,15 @@ export class GradeService {
       : null;
 
     return grades
-      .map((g) => ({
-        ...g,
-        student: studentMap.get(g.student_id) ?? null,
-        converted: this.gradeScale.convertScore(scale, g.score, maxScore),
-      }))
+      .map((g) => {
+        const score: number = g.score;
+
+        return {
+          ...g,
+          student: studentMap.get(g.student_id) ?? null,
+          converted: this.gradeScale.convertScore(scale, score, maxScore),
+        };
+      })
       .sort((a, b) => {
         const aName = a.student?.last_name ?? '';
         const bName = b.student?.last_name ?? '';
@@ -237,9 +241,10 @@ export class GradeService {
 
     const gradesByAssessment = new Map<string, typeof grades>();
     for (const g of grades ?? []) {
-      const list = gradesByAssessment.get(g.assessment_id) ?? [];
+      const assessment_id: string = g.assessment_id;
+      const list = gradesByAssessment.get(assessment_id) ?? [];
       list.push(g);
-      gradesByAssessment.set(g.assessment_id, list);
+      gradesByAssessment.set(assessment_id, list);
     }
 
     const userId = (req as FastifyRequest & { user?: { id: string } }).user?.id;
@@ -247,14 +252,25 @@ export class GradeService {
       ? await this.gradeScale.getDefault(userId).catch(() => null)
       : null;
 
-    return assessments.map((a) => ({
-      ...a,
-      grades: (gradesByAssessment.get(a.id) ?? []).map((g) => ({
-        ...g,
-        student: studentMap.get(g.student_id) ?? null,
-        converted: this.gradeScale.convertScore(scale, g.score, a.max_score),
-      })),
-    }));
+    return assessments.map((a) => {
+      const assessmentId = String(a.id);
+      const grades = gradesByAssessment.get(assessmentId) ?? [];
+
+      return {
+        ...a,
+        grades: grades.map((g) => {
+          const studentId = String(g.student_id);
+          const score: number = g.score;
+          const max_score: number = a.max_score;
+
+          return {
+            ...g,
+            student: studentMap.get(studentId) ?? null,
+            converted: this.gradeScale.convertScore(scale, score, max_score),
+          };
+        }),
+      };
+    });
   }
 
   async update(

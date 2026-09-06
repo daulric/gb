@@ -32,7 +32,7 @@ export class PermissionGuard implements CanActivate {
     if (!required) return true;
 
     const request = context.switchToHttp().getRequest();
-    const userId = request.user?.id;
+    const userId: string = request.user?.id;
 
     if (!userId) {
       // AuthGuard should have populated request.user; if not, fail closed.

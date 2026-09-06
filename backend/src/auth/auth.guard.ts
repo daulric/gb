@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '@/supabase/supabase.service';
+import { FastifyReply, FastifyRequest } from 'fastify';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -15,8 +16,8 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const http = context.switchToHttp();
-    const request = http.getRequest();
-    const reply = http.getResponse();
+    const request: FastifyRequest = http.getRequest();
+    const reply: FastifyReply = http.getResponse();
 
     try {
       const user = await this.supabaseService.getUser(request, reply);

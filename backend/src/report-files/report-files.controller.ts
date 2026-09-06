@@ -209,11 +209,12 @@ export class ReportFilesController {
     @Req() req: any,
     @Body() dto: PersistClassSummaryDto,
   ) {
+    const userId: string = req.user.id;
     return this.reportFiles.generateAndPersistClassSummary(
       dto.studentGroupId,
       dto.termId,
       dto.reportType,
-      req.user.id,
+      userId,
     );
   }
 }

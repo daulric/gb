@@ -69,10 +69,14 @@ export class AnnouncementService {
     const byAnnouncement = new Map<string, ReaderRow[]>();
     for (const r of (reads ?? []) as any[]) {
       const reader = r.reader as ReaderRow | null;
+      const announcement_id = r.announcement_id as string;
+
       if (!reader) continue;
-      const list = byAnnouncement.get(r.announcement_id) ?? [];
+
+      const list = byAnnouncement.get(announcement_id) ?? [];
+
       list.push(reader);
-      byAnnouncement.set(r.announcement_id, list);
+      byAnnouncement.set(announcement_id, list);
     }
 
     return items.map((item) => ({
@@ -86,7 +90,7 @@ export class AnnouncementService {
 
   async findAll(userId: string) {
     const supabase = this.supabaseService.getServiceClient();
-    const { school_id } = await this.getProfile(userId);
+    const { school_id }: { school_id: string } = await this.getProfile(userId);
 
     let content = (await this.cache.get(contentKey(school_id))) as any[] | null;
     if (!content) {
@@ -124,7 +128,7 @@ export class AnnouncementService {
 
   async create(userId: string, dto: CreateAnnouncementDto) {
     const supabase = this.supabaseService.getServiceClient();
-    const { school_id } = await this.getProfile(userId);
+    const { school_id }: { school_id: string } = await this.getProfile(userId);
 
     const { data, error } = await supabase
       .from('announcement')
@@ -147,7 +151,10 @@ export class AnnouncementService {
 
   async update(userId: string, id: string, dto: UpdateAnnouncementDto) {
     const supabase = this.supabaseService.getServiceClient();
-    const { school_id } = await this.assertCanManage(userId, id);
+    const { school_id }: { school_id: string } = await this.assertCanManage(
+      userId,
+      id,
+    );
 
     const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
@@ -172,7 +179,10 @@ export class AnnouncementService {
 
   async delete(userId: string, id: string) {
     const supabase = this.supabaseService.getServiceClient();
-    const { school_id } = await this.assertCanManage(userId, id);
+    const { school_id }: { school_id: string } = await this.assertCanManage(
+      userId,
+      id,
+    );
 
     const { error } = await supabase.from('announcement').delete().eq('id', id);
 

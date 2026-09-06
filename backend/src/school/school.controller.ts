@@ -36,17 +36,20 @@ export class SchoolController {
 
   @Get('my-pending-request')
   async getMyPendingRequest(@Req() req: any) {
-    return this.schoolService.getMyPendingRequest(req.user.id);
+    const userId: string = req.user.id;
+    return this.schoolService.getMyPendingRequest(userId);
   }
 
   @Get('members')
   async getMembers(@Req() req: any) {
-    return this.schoolService.getMembers(req.user.id);
+    const userId: string = req.user.id;
+    return this.schoolService.getMembers(userId);
   }
 
   @Post('leave')
   async leaveSchool(@Req() req: any) {
-    return this.schoolService.leaveSchool(req.user.id);
+    const userId: string = req.user.id;
+    return this.schoolService.leaveSchool(userId);
   }
 
   @Delete('members/:membershipId')
@@ -55,14 +58,16 @@ export class SchoolController {
     @Req() req: any,
     @Param('membershipId') membershipId: string,
   ) {
-    return this.schoolService.removeMember(req.user.id, membershipId);
+    const userId: string = req.user.id;
+    return this.schoolService.removeMember(userId, membershipId);
   }
 
   // Must be defined before /:schoolId to avoid route conflicts
   @Get('join-requests')
   @UseGuards(AdminGuard)
   async getPendingRequests(@Req() req: any) {
-    return this.schoolService.getPendingRequests(req.user.id);
+    const userId: string = req.user.id;
+    return this.schoolService.getPendingRequests(userId);
   }
 
   @Patch('join-requests/:requestId/approve')
@@ -72,8 +77,9 @@ export class SchoolController {
     @Param('requestId') requestId: string,
     @Body() dto: ApproveJoinRequestDto,
   ) {
+    const userId: string = req.user.id;
     return this.schoolService.approveRequest(
-      req.user.id,
+      userId,
       requestId,
       dto.role,
       dto.customRoleIds,
@@ -83,12 +89,14 @@ export class SchoolController {
   @Patch('join-requests/:requestId/reject')
   @UseGuards(AdminGuard)
   async rejectRequest(@Req() req: any, @Param('requestId') requestId: string) {
-    return this.schoolService.rejectRequest(req.user.id, requestId);
+    const userId: string = req.user.id;
+    return this.schoolService.rejectRequest(userId, requestId);
   }
 
   @Post()
   async create(@Req() req: any, @Body() dto: CreateSchoolDto) {
-    const raw = await this.schoolService.create(dto, req.user.id);
+    const userId: string = req.user.id;
+    const raw = await this.schoolService.create(dto, userId);
     return this.versioning.resolve(req, 'school.detail')(raw);
   }
 
@@ -98,10 +106,7 @@ export class SchoolController {
     @Param('schoolId') schoolId: string,
     @Body() dto: CreateJoinRequestDto,
   ) {
-    return this.schoolService.createJoinRequest(
-      req.user.id,
-      schoolId,
-      dto.message,
-    );
+    const userId: string = req.user.id;
+    return this.schoolService.createJoinRequest(userId, schoolId, dto.message);
   }
 }
