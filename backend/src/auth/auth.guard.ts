@@ -8,6 +8,13 @@ import {
 import { SupabaseService } from '@/supabase/supabase.service';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
+interface AuthenticatedRequest extends FastifyRequest {
+  user?: {
+    id: string;
+    email?: string;
+  };
+}
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
@@ -16,7 +23,7 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const http = context.switchToHttp();
-    const request: FastifyRequest = http.getRequest();
+    const request: AuthenticatedRequest = http.getRequest();
     const reply: FastifyReply = http.getResponse();
 
     try {
